@@ -1,0 +1,163 @@
+
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "IPTV Run Report",
+  "type": "object",
+  "properties": {
+    "run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "finished_at": {
+      "type": ["string", "null"],
+      "format": "date-time"
+    },
+    "version": {
+      "type": "string"
+    },
+    "mode": {
+      "type": "string",
+      "minLength": 1
+    },
+    "run_commit_sha": {
+      "type": ["string", "null"]
+    },
+    "candidate_commit_sha": {
+      "type": ["string", "null"]
+    },
+    "candidate_source_commit_sha": {
+      "type": ["string", "null"]
+    },
+    "formal_m3u_sha256": {
+      "$ref": "#/$defs/nullableSha256"
+    },
+    "formal_txt_sha256": {
+      "$ref": "#/$defs/nullableSha256"
+    },
+    "source_stats": {
+      "type": "object"
+    },
+    "candidate_stats": {
+      "type": "object"
+    },
+    "validation_stats": {
+      "type": "object"
+    },
+    "queue_wait_timeout": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "concurrency_peaks": {
+      "type": "object"
+    },
+    "queue_peaks": {
+      "type": "object"
+    },
+    "structured_errors": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "publish_status": {
+      "type": "string",
+      "minLength": 1
+    },
+    "program_connectivity": {
+      "type": ["object", "null"]
+    },
+    "candidate_layer2_status": {
+      "$ref": "#/$defs/status"
+    },
+    "layer2_status": {
+      "$ref": "#/$defs/status"
+    },
+    "layer3_status": {
+      "$ref": "#/$defs/status"
+    },
+    "test_error": {
+      "type": ["string", "null"]
+    },
+    "schedule_missed": {
+      "type": "boolean"
+    },
+    "missed_date_range": {
+      "type": ["object", "null"]
+    },
+    "compensation_executed": {
+      "type": "boolean"
+    },
+    "compensation_result": {
+      "type": ["string", "null"]
+    },
+    "target_slot": {
+      "type": ["string", "null"]
+    },
+    "force_used": {
+      "type": "boolean"
+    },
+    "force_bypassed_thresholds": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "run_id",
+    "started_at",
+    "finished_at",
+    "version",
+    "mode",
+    "run_commit_sha",
+    "candidate_commit_sha",
+    "candidate_source_commit_sha",
+    "formal_m3u_sha256",
+    "formal_txt_sha256",
+    "source_stats",
+    "candidate_stats",
+    "validation_stats",
+    "queue_wait_timeout",
+    "concurrency_peaks",
+    "queue_peaks",
+    "structured_errors",
+    "publish_status",
+    "program_connectivity",
+    "candidate_layer2_status",
+    "layer2_status",
+    "layer3_status",
+    "test_error",
+    "schedule_missed",
+    "missed_date_range",
+    "compensation_executed",
+    "compensation_result",
+    "target_slot",
+    "force_used",
+    "force_bypassed_thresholds"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-fA-F0-9]{64}$"
+    },
+    "nullableSha256": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/sha256"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": ["passed", "failed", "unverified"]
+    }
+  }
+}
