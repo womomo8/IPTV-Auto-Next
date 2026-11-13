@@ -1,0 +1,223 @@
+
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "IPTV Subscription Information",
+  "type": "object",
+  "properties": {
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "schema_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "channel_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "line_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "m3u_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "txt_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "layer1_status": {
+      "$ref": "#/$defs/status"
+    },
+    "layer2_status": {
+      "$ref": "#/$defs/status"
+    },
+    "layer3_status": {
+      "$ref": "#/$defs/status"
+    },
+    "layer2_evidence": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/layer2Evidence"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "layer3_evidence": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/layer3Evidence"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "generated_at",
+    "channel_count",
+    "line_count",
+    "m3u_sha256",
+    "txt_sha256",
+    "layer1_status",
+    "layer2_status",
+    "layer3_status",
+    "layer2_evidence",
+    "layer3_evidence"
+  ],
+  "anyOf": [
+    {
+      "required": ["version"]
+    },
+    {
+      "required": ["schema_version"]
+    }
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-fA-F0-9]{64}$"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "passed",
+        "failed",
+        "unverified"
+      ]
+    },
+    "layer2Evidence": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "type": "string",
+          "enum": ["passed", "failed"]
+        },
+        "m3u_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "txt_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "verified_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "network_environment": {
+          "type": "string",
+          "minLength": 1
+        },
+        "verification_method": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidence_location": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "result",
+        "m3u_sha256",
+        "txt_sha256",
+        "verified_at",
+        "network_environment",
+        "verification_method",
+        "evidence_location"
+      ],
+      "additionalProperties": false
+    },
+    "layer3Evidence": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "type": "string",
+          "enum": ["passed", "failed"]
+        },
+        "m3u_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "txt_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "media_url": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https?://"
+        },
+        "hls_segment_results": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "verified_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "network_environment": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidence_location": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "result",
+        "m3u_sha256",
+        "txt_sha256",
+        "media_url",
+        "verified_at",
+        "network_environment",
+        "evidence_location"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "layer2_status": {
+            "const": "unverified"
+          }
+        },
+        "required": ["layer2_status"]
+      },
+      "then": {
+        "properties": {
+          "layer2_evidence": {
+            "type": "null"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "layer3_status": {
+            "const": "unverified"
+          }
+        },
+        "required": ["layer3_status"]
+      },
+      "then": {
+        "properties": {
+          "layer3_evidence": {
+            "type": "null"
+          }
+        }
+      }
+    }
+  ]
+}
