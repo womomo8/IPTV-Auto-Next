@@ -1,1 +1,67 @@
+name: CI
 
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: foundation-ci-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  test:
+    name: Python foundation checks
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
+        with:
+          python-version-file: .python-version
+          cache: false
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2
+        with:
+          version: 0.10.0
+          enable-cache: false
+
+      - name: Check or bootstrap dependency lock
+        shell: bash
+        run: |
+          if [[ -f uv.lock ]]; then
+            uv lock --check
+          else
+            uv lock
+          fi
+
+      - name: Install locked dependencies
+        run: uv sync --locked --extra dev
+
+      - name: Check formatting and lint
+        run: |
+          uv run --locked ruff format --check src tests
+          uv run --locked ruff check src tests
+
+      - name: Run unit tests
+        run: uv run --locked pytest
+
+      - name: Verify test-mode entry point
+        run: uv run --locked iptv-auto-next --mode test
+
+      - name: Upload dependency lock file
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: uv-lock-bootstrap
+          path: uv.lock
+          if-no-files-found: ignore
+          retention-days: 7
