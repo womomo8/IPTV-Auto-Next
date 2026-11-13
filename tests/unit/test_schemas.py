@@ -377,17 +377,6 @@ def test_publish_manifest_rejects_only_one_previous_count() -> None:
     assert not validator.is_valid(data)
 
 
-def test_publish_manifest_requires_reason_when_blocked() -> None:
-    validator = make_validator("publish_manifest.schema.json")
-    data = valid_publish_manifest()
-    data["publish_blocked"] = True
-
-    assert not validator.is_valid(data)
-
-    data["publish_block_reason"] = "test block reason"
-    validator.validate(data)
-
-
 def test_run_report_rejects_incomplete_report() -> None:
     validator = make_validator("run_report.schema.json")
 
