@@ -1,0 +1,11 @@
+{
+  "manual_single": [],
+  "carriers": [],
+  "discovery": [
+    {
+      "id": "public-index-iptv-org-cn",
+      "url": "https://iptv-org.github.io/iptv/countries/cn.m3u",
+      "enabled": true
+    }
+  ]
+}
