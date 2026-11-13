@@ -1,0 +1,89 @@
+
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "IPTV Candidate Manifest",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "source_commit_sha": {
+      "type": "string",
+      "minLength": 1
+    },
+    "m3u_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "txt_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "layer1_status": {
+      "const": "passed"
+    },
+    "channel_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "line_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "formal_file_baselines": {
+      "type": "object",
+      "properties": {
+        "output/iptv.m3u": {
+          "$ref": "#/$defs/nullableSha256"
+        },
+        "output/iptv.txt": {
+          "$ref": "#/$defs/nullableSha256"
+        },
+        "output/subscription_info.json": {
+          "$ref": "#/$defs/nullableSha256"
+        },
+        "output/publish_manifest.json": {
+          "$ref": "#/$defs/nullableSha256"
+        }
+      },
+      "required": [
+        "output/iptv.m3u",
+        "output/iptv.txt",
+        "output/subscription_info.json",
+        "output/publish_manifest.json"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "schema_version",
+    "generated_at",
+    "source_commit_sha",
+    "m3u_sha256",
+    "txt_sha256",
+    "layer1_status",
+    "channel_count",
+    "line_count",
+    "formal_file_baselines"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-fA-F0-9]{64}$"
+    },
+    "nullableSha256": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/sha256"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  }
+}
