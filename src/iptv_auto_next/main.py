@@ -31,9 +31,7 @@ def main() -> int:
         "run_id": report.run_id,
         "mode": report.mode,
         "started_at": report.started_at.isoformat().replace("+00:00", "Z"),
-        "finished_at": report.finished_at.astimezone(UTC).isoformat().replace(
-            "+00:00", "Z"
-        ),
+        "finished_at": report.finished_at.astimezone(UTC).isoformat().replace("+00:00", "Z"),
         "status": report.status,
         "errors": report.errors,
     }
