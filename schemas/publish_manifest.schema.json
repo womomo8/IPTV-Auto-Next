@@ -1,4 +1,3 @@
-
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "IPTV Publish Manifest",
@@ -13,23 +12,62 @@
       "format": "date-time"
     },
     "source_commit_sha": {
-      "type": "string",
-      "minLength": 1
+      "$ref": "#/$defs/commitSha"
     },
     "candidate_commit_sha": {
-      "type": ["string", "null"]
+      "anyOf": [
+        {
+          "$ref": "#/$defs/commitSha"
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
     "files": {
       "type": "object",
       "properties": {
         "iptv.m3u": {
-          "$ref": "#/$defs/fileRecord"
+          "allOf": [
+            {
+              "$ref": "#/$defs/fileRecord"
+            },
+            {
+              "properties": {
+                "path": {
+                  "const": "output/iptv.m3u"
+                }
+              }
+            }
+          ]
         },
         "iptv.txt": {
-          "$ref": "#/$defs/fileRecord"
+          "allOf": [
+            {
+              "$ref": "#/$defs/fileRecord"
+            },
+            {
+              "properties": {
+                "path": {
+                  "const": "output/iptv.txt"
+                }
+              }
+            }
+          ]
         },
         "subscription_info.json": {
-          "$ref": "#/$defs/fileRecord"
+          "allOf": [
+            {
+              "$ref": "#/$defs/fileRecord"
+            },
+            {
+              "properties": {
+                "path": {
+                  "const": "output/subscription_info.json"
+                }
+              }
+            }
+          ]
         }
       },
       "required": [
@@ -56,17 +94,40 @@
       "minimum": 0
     },
     "last_successful_daily_update_at": {
-      "type": ["string", "null"],
-      "format": "date-time"
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "date-time"
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
     "last_successful_daily_target_slot": {
-      "type": ["string", "null"]
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
     "publish_blocked": {
       "type": "boolean"
     },
     "publish_block_reason": {
-      "type": ["string", "null"]
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
     "layer1_status": {
       "$ref": "#/$defs/status"
@@ -97,7 +158,64 @@
     "layer3_status"
   ],
   "additionalProperties": false,
+  "allOf": [
+    {
+      "anyOf": [
+        {
+          "properties": {
+            "previous_channel_count": {
+              "type": "null"
+            },
+            "previous_line_count": {
+              "type": "null"
+            }
+          }
+        },
+        {
+          "properties": {
+            "previous_channel_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "previous_line_count": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "if": {
+        "properties": {
+          "publish_blocked": {
+            "const": true
+          }
+        },
+        "required": ["publish_blocked"]
+      },
+      "then": {
+        "properties": {
+          "publish_block_reason": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "publish_block_reason": {
+            "type": "null"
+          }
+        }
+      }
+    }
+  ],
   "$defs": {
+    "commitSha": {
+      "type": "string",
+      "pattern": "^[a-fA-F0-9]{40}$"
+    },
     "sha256": {
       "type": "string",
       "pattern": "^[a-fA-F0-9]{64}$"
