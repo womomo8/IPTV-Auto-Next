@@ -1,0 +1,71 @@
+
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "IPTV Sources Configuration",
+  "type": "object",
+  "properties": {
+    "manual_single": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "tvg_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "url": {
+            "$ref": "#/$defs/httpUrl"
+          }
+        },
+        "required": ["id", "tvg_id", "url"],
+        "additionalProperties": false
+      }
+    },
+    "carriers": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/subscriptionSource"
+      }
+    },
+    "discovery": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/subscriptionSource"
+      }
+    }
+  },
+  "required": [
+    "manual_single",
+    "carriers",
+    "discovery"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "httpUrl": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https?://(?![^/?#]*@)[^\\s\\r\\n\\u0000-\\u001F\\u007F]+$"
+    },
+    "subscriptionSource": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "url": {
+          "$ref": "#/$defs/httpUrl"
+        },
+        "enabled": {
+          "type": "boolean"
+        }
+      },
+      "required": ["id", "url", "enabled"],
+      "additionalProperties": false
+    }
+  }
+}
