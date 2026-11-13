@@ -214,6 +214,8 @@
       "then": {
         "properties": {
           "layer2_evidence": {
+            "type": "object",
+            "required": ["result"],
             "properties": {
               "result": {
                 "const": "passed"
@@ -235,6 +237,8 @@
       "then": {
         "properties": {
           "layer2_evidence": {
+            "type": "object",
+            "required": ["result"],
             "properties": {
               "result": {
                 "const": "failed"
@@ -273,6 +277,8 @@
       "then": {
         "properties": {
           "layer3_evidence": {
+            "type": "object",
+            "required": ["result"],
             "properties": {
               "result": {
                 "const": "passed"
@@ -294,6 +300,8 @@
       "then": {
         "properties": {
           "layer3_evidence": {
+            "type": "object",
+            "required": ["result"],
             "properties": {
               "result": {
                 "const": "failed"
