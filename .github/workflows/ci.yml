@@ -57,6 +57,15 @@ jobs:
       - name: Verify test-mode entry point
         run: uv run --locked iptv-auto-next --mode test
 
+      - name: Verify test mode leaves the repository unchanged
+        shell: bash
+        run: |
+          if [[ -n "$(git status --porcelain --untracked-files=all)" ]]; then
+            echo "Test workflow modified repository files:"
+            git status --short --untracked-files=all
+            exit 1
+          fi
+
       - name: Upload dependency lock file
         if: always()
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
