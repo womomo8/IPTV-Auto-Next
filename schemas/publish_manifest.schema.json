@@ -184,31 +184,6 @@
           }
         }
       ]
-    },
-    {
-      "if": {
-        "properties": {
-          "publish_blocked": {
-            "const": true
-          }
-        },
-        "required": ["publish_blocked"]
-      },
-      "then": {
-        "properties": {
-          "publish_block_reason": {
-            "type": "string",
-            "minLength": 1
-          }
-        }
-      },
-      "else": {
-        "properties": {
-          "publish_block_reason": {
-            "type": "null"
-          }
-        }
-      }
     }
   ],
   "$defs": {
