@@ -1,0 +1,128 @@
+
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "IPTV Publish Manifest",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "source_commit_sha": {
+      "type": "string",
+      "minLength": 1
+    },
+    "candidate_commit_sha": {
+      "type": ["string", "null"]
+    },
+    "files": {
+      "type": "object",
+      "properties": {
+        "iptv.m3u": {
+          "$ref": "#/$defs/fileRecord"
+        },
+        "iptv.txt": {
+          "$ref": "#/$defs/fileRecord"
+        },
+        "subscription_info.json": {
+          "$ref": "#/$defs/fileRecord"
+        }
+      },
+      "required": [
+        "iptv.m3u",
+        "iptv.txt",
+        "subscription_info.json"
+      ],
+      "additionalProperties": false
+    },
+    "channel_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "line_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "previous_channel_count": {
+      "type": ["integer", "null"],
+      "minimum": 0
+    },
+    "previous_line_count": {
+      "type": ["integer", "null"],
+      "minimum": 0
+    },
+    "last_successful_daily_update_at": {
+      "type": ["string", "null"],
+      "format": "date-time"
+    },
+    "last_successful_daily_target_slot": {
+      "type": ["string", "null"]
+    },
+    "publish_blocked": {
+      "type": "boolean"
+    },
+    "publish_block_reason": {
+      "type": ["string", "null"]
+    },
+    "layer1_status": {
+      "$ref": "#/$defs/status"
+    },
+    "layer2_status": {
+      "$ref": "#/$defs/status"
+    },
+    "layer3_status": {
+      "$ref": "#/$defs/status"
+    }
+  },
+  "required": [
+    "schema_version",
+    "generated_at",
+    "source_commit_sha",
+    "candidate_commit_sha",
+    "files",
+    "channel_count",
+    "line_count",
+    "previous_channel_count",
+    "previous_line_count",
+    "last_successful_daily_update_at",
+    "last_successful_daily_target_slot",
+    "publish_blocked",
+    "publish_block_reason",
+    "layer1_status",
+    "layer2_status",
+    "layer3_status"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-fA-F0-9]{64}$"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["passed", "failed", "unverified"]
+    },
+    "fileRecord": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "size_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      },
+      "required": ["path", "size_bytes", "sha256"],
+      "additionalProperties": false
+    }
+  }
+}
