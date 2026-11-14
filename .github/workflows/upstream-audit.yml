@@ -1,0 +1,281 @@
+
+name: Upstream Data Audit
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: upstream-data-audit
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    name: Audit locked upstream channel, feed and stream data
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
+        with:
+          python-version-file: .python-version
+
+      - name: Download and audit locked upstream data
+        id: audit
+        shell: bash
+        run: |
+          python - <<'PY'
+          import csv
+          import io
+          import json
+          import os
+          import re
+          import sys
+          import urllib.request
+          from collections import Counter
+          from pathlib import Path
+
+          DATABASE_COMMIT = "53b0fa6605dac7c65a0fa151fef4877b10e82151"
+          IPTV_COMMIT = "f1191d1b8d8d5e76314cfd5690ceec904d26e1a9"
+
+          DATABASE_BASE = (
+              "https://raw.githubusercontent.com/iptv-org/database/"
+              + DATABASE_COMMIT
+          )
+          IPTV_BASE = (
+              "https://raw.githubusercontent.com/iptv-org/iptv/"
+              + IPTV_COMMIT
+          )
+
+          report = {
+              "status": "running",
+              "database_commit": DATABASE_COMMIT,
+              "iptv_commit": IPTV_COMMIT,
+              "errors": [],
+              "warnings": [],
+              "statistics": {},
+              "checks": {},
+          }
+
+          errors = report["errors"]
+          warnings = report["warnings"]
+
+          def add_error(message):
+              errors.append(message)
+
+          def add_warning(message):
+              warnings.append(message)
+
+          def download(url):
+              request = urllib.request.Request(
+                  url,
+                  headers={"User-Agent": "IPTV-Auto-Next-Upstream-Audit"},
+              )
+              with urllib.request.urlopen(request, timeout=90) as response:
+                  return response.read()
+
+          def read_csv(data, required_fields, label):
+              text = data.decode("utf-8-sig")
+              reader = csv.DictReader(io.StringIO(text))
+              headers = reader.fieldnames or []
+              missing = sorted(set(required_fields) - set(headers))
+              if missing:
+                  raise ValueError(
+                      f"{label}: missing CSV columns {missing}; "
+                      f"actual columns: {headers}"
+                  )
+              return list(reader), headers
+
+          def split_values(value):
+              if not value:
+                  return set()
+              return {item.strip() for item in value.split(";") if item.strip()}
+
+          def compare_sets(label, local, upstream, limit=100):
+              if local != upstream:
+                  if len(report["warnings"]) < limit:
+                      add_warning(
+                          f"{label}: local={sorted(local)[:10]}, "
+                          f"upstream={sorted(upstream)[:10]}"
+                      )
+                  return False
+              return True
+
+          try:
+              channels_bytes = download(
+                  f"{DATABASE_BASE}/data/channels.csv"
+              )
+              feeds_bytes = download(
+                  f"{DATABASE_BASE}/data/feeds.csv"
+              )
+
+              upstream_channels, channel_headers = read_csv(
+                  channels_bytes,
+                  {"id", "name", "country"},
+                  "channels.csv",
+              )
+              upstream_feeds, feed_headers = read_csv(
+                  feeds_bytes,
+                  {"channel", "id"},
+                  "feeds.csv",
+              )
+
+              report["statistics"]["channels_csv_bytes"] = len(channels_bytes)
+              report["statistics"]["feeds_csv_bytes"] = len(feeds_bytes)
+              report["statistics"]["channels_csv_columns"] = channel_headers
+              report["statistics"]["feeds_csv_columns"] = feed_headers
+
+              upstream_channel_map = {}
+              duplicate_channel_ids = []
+
+              for row in upstream_channels:
+                  channel_id = (row.get("id") or "").strip()
+                  if not channel_id:
+                      add_error("channels.csv contains an empty channel ID")
+                      continue
+                  if channel_id in upstream_channel_map:
+                      duplicate_channel_ids.append(channel_id)
+                      continue
+                  upstream_channel_map[channel_id] = row
+
+              if duplicate_channel_ids:
+                  add_error(
+                      "Duplicate upstream channel IDs: "
+                      + ", ".join(duplicate_channel_ids[:20])
+                  )
+
+              upstream_feed_pairs = set()
+              duplicate_feed_pairs = []
+              feed_channels_missing = []
+
+              for row in upstream_feeds:
+                  channel_id = (row.get("channel") or "").strip()
+                  feed_id = (row.get("id") or "").strip()
+
+                  if not channel_id or not feed_id:
+                      add_error("feeds.csv contains an empty channel or feed ID")
+                      continue
+
+                  pair = (channel_id, feed_id)
+                  if pair in upstream_feed_pairs:
+                      duplicate_feed_pairs.append(
+                          f"{channel_id}@{feed_id}"
+                      )
+                  upstream_feed_pairs.add(pair)
+
+                  if channel_id not in upstream_channel_map:
+                      feed_channels_missing.append(channel_id)
+
+              if duplicate_feed_pairs:
+                  add_error(
+                      "Duplicate upstream channel/feed pairs: "
+                      + ", ".join(duplicate_feed_pairs[:20])
+                  )
+
+              if feed_channels_missing:
+                  add_error(
+                      "Feed rows reference unknown channels: "
+                      + ", ".join(sorted(set(feed_channels_missing))[:20])
+                  )
+
+              local_path = Path("data/global_channels/channels.json")
+              summary_path = Path(
+                  "data/global_channels/validation_summary.json"
+              )
+
+              local_data = json.loads(local_path.read_text(encoding="utf-8"))
+              summary = json.loads(summary_path.read_text(encoding="utf-8"))
+              local_channels = local_data.get("channels")
+
+              if not isinstance(local_channels, list):
+                  raise ValueError(
+                      "channels.json must contain a top-level channels array"
+                  )
+
+              local_map = {}
+              duplicate_local_ids = []
+
+              for channel in local_channels:
+                  if not isinstance(channel, dict):
+                      add_error("channels.json contains a non-object channel")
+                      continue
+
+                  channel_id = channel.get("tvg_id")
+                  if not isinstance(channel_id, str) or not channel_id.strip():
+                      add_error("channels.json contains an empty tvg_id")
+                      continue
+
+                  channel_id = channel_id.strip()
+                  if channel_id in local_map:
+                      duplicate_local_ids.append(channel_id)
+                      continue
+
+                  local_map[channel_id] = channel
+
+              if duplicate_local_ids:
+                  add_error(
+                      "Duplicate local tvg_id values: "
+                      + ", ".join(duplicate_local_ids[:20])
+                  )
+
+              local_ids = set(local_map)
+              upstream_ids = set(upstream_channel_map)
+
+              missing_locally = sorted(upstream_ids - local_ids)
+              missing_upstream = sorted(local_ids - upstream_ids)
+
+              if missing_locally:
+                  add_error(
+                      f"{len(missing_locally)} upstream channels are absent "
+                      f"from local channels.json: {missing_locally[:20]}"
+                  )
+
+              if missing_upstream:
+                  add_error(
+                      f"{len(missing_upstream)} local channels are absent "
+                      f"from upstream channels.csv: {missing_upstream[:20]}"
+                  )
+
+              name_mismatches = []
+              country_mismatches = []
+              alias_mismatches = []
+              category_mismatches = []
+
+              for channel_id in sorted(local_ids & upstream_ids):
+                  local = local_map[channel_id]
+                  upstream = upstream_channel_map[channel_id]
+
+                  local_name = local.get("canonical_name")
+                  upstream_name = (upstream.get("name") or "").strip()
+
+                  if local_name != upstream_name:
+                      name_mismatches.append(channel_id)
+
+                  local_country = local.get("country")
+                  upstream_country = (upstream.get("country") or "").strip()
+
+                  if local_country != upstream_country:
+                      country_mismatches.append(channel_id)
+
+                  local_aliases = set(local.get("aliases") or [])
+                  upstream_aliases = split_values(
+                      upstream.get("alt_names") or ""
+                  )
+                  if local_aliases != upstream_aliases:
+                      alias_mismatches.append(channel_id)
+
+                  local_categories = set(local.get("categories") or [])
+                  upstream_categories = split_values(
+                      upstream.get("categories") or ""
+                  )
+                  if local_categories != upstream_categories:
+                      category_mismatches.append(channel_id)
+
+              if name_mismatches:
+                  add_error(
+                      f"{len(name_mismatches)} channel name mismatche
