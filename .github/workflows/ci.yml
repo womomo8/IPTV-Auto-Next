@@ -51,6 +51,19 @@ jobs:
           uv run --locked ruff format --check src tests
           uv run --locked ruff check src tests
 
+      - name: Generate Ruff-formatted test file
+        if: always()
+        run: uv run --locked ruff format tests/unit/test_schemas.py
+
+      - name: Upload Ruff-formatted test file
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: ruff-formatted-test-schemas
+          path: tests/unit/test_schemas.py
+          if-no-files-found: error
+          retention-days: 7
+
       - name: Run unit tests
         run: uv run --locked pytest
 
