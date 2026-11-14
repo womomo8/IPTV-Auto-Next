@@ -21,9 +21,7 @@ SCHEMA_PATHS = {
     "publish_manifest.schema.json": ROOT / "schemas" / "publish_manifest.schema.json",
     "candidate_manifest.schema.json": ROOT / "schemas" / "candidate_manifest.schema.json",
     "subscription_info.schema.json": ROOT / "schemas" / "subscription_info.schema.json",
-    "global_channels.schema.json": (
-        ROOT / "data" / "global_channels" / "channels.schema.json"
-    ),
+    "global_channels.schema.json": (ROOT / "data" / "global_channels" / "channels.schema.json"),
     "channel_filter.schema.json": (
         ROOT / "data" / "global_channels" / "channel_filter.schema.json"
     ),
@@ -71,9 +69,7 @@ def selected_country_conflicts(channels: list[dict]) -> dict[str, int]:
                 if key:
                     name_to_ids.setdefault(key, set()).add(channel["tvg_id"])
 
-        result[country] = sum(
-            1 for channel_ids in name_to_ids.values() if len(channel_ids) > 1
-        )
+        result[country] = sum(1 for channel_ids in name_to_ids.values() if len(channel_ids) > 1)
 
     return result
 
@@ -244,20 +240,14 @@ def test_validation_summary_matches_actual_global_channel_data() -> None:
 
     ids = {channel["tvg_id"] for channel in channels}
     countries = {channel["country"] for channel in channels}
-    categories = {
-        category
-        for channel in channels
-        for category in channel["categories"]
-    }
+    categories = {category for channel in channels for category in channel["categories"]}
 
     country_counts = {
         country: sum(1 for channel in channels if channel["country"] == country)
         for country in SELECTED_COUNTRIES
     }
 
-    empty_categories = sum(
-        1 for channel in channels if not channel["categories"]
-    )
+    empty_categories = sum(1 for channel in channels if not channel["categories"])
 
     assert summary["channels"] == len(channels)
     assert summary["unique_tvg_ids"] == len(ids)
@@ -266,9 +256,7 @@ def test_validation_summary_matches_actual_global_channel_data() -> None:
     assert summary["country_counts"] == country_counts
     assert summary["empty_categories"] == empty_categories
     assert summary["json_bytes"] == CHANNELS_PATH.stat().st_size
-    assert summary["selected_country_name_conflict_keys"] == (
-        selected_country_conflicts(channels)
-    )
+    assert summary["selected_country_name_conflict_keys"] == (selected_country_conflicts(channels))
 
 
 def test_sources_schema_accepts_empty_arrays() -> None:
