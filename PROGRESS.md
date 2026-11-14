@@ -1,157 +1,107 @@
-# IPTV-Auto-Next 开发进度记录
+PROGRESS.md
 
-本文件记录仓库实际状态、测试结果和阶段验收情况。
-未实际执行的项目不得标记为通过。
+全球频道库升级实施进度
 
----
+当前状态：方案已确定，正式实施准备阶段；代码尚未开始交付。
 
-## 一、当前阶段
+一、项目最终目标
 
-- 阶段：第二阶段——仓库与基础框架
-- 状态：进行中，尚未完成整体验收
-- 分支：main
-- 最近一次 CI：#39
-- 最近一次 CI 结果：success
-- 最近一次 CI 验证提交：`8d995cd5a8b4f7296e25f4c9131b4d44892460f6`
+自动筛选真正能在中国国内网络环境下播放的 IPv4 直播源，并持续输出可用的 IPTV 订阅。
 
-## 二、已完成工作
+全球频道库作为频道身份数据库，用户频道清单决定每次运行需要搜索的频道范围。
 
-### 2.1 Python 环境与仓库基础
+二、已经确定的方案
 
-- [x] Python 包目录和命令行入口已建立。
-- [x] Python 版本固定为 3.14.10。
-- [x] pyproject.toml 已建立。
-- [x] uv.lock 已提交。
-- [x] GitHub Actions 基础 CI 已建立。
-- [x] 第三方 GitHub Actions 均固定到完整 commit SHA。
-- [x] CI 使用 Ubuntu 24.04。
-- [x] Python 版本由 .python-version 统一指定。
+1. "data/global_channels/channels.json" 是唯一全球频道身份库，不再维护另一套重复的频道主字典。
+2. "config/channels.txt" 是用户频道选择入口：
+   - 有内容：只搜索用户填写的频道，不限制国家和地区，可以混合填写中国、美国、日本、英国等频道。
+   - 空文件、只有空行或注释：默认搜索中国大陆（CN）、香港（HK）、澳门（MO）、台湾（TW）。
+3. 全球频道库负责识别频道身份，不代表其中包含可直接播放的线路。
+4. 通过上游 Feed 和 Streams 数据发现频道对应的直播线路，再进入既有候选处理和验证流程。
+5. 所有线路必须继续遵守 MASTER_PLAN.md 1.17 的 IPv4 安全检查、媒体验证、候选限制、发布保护等规则。
+6. 不引入评分系统，不增加复杂的持久化线路数据库，不增加自动黑名单系统。
+7. 保留现有 "config/"、"src/" 等必要目录，不因为当前代码尚未完成就删除。
+8. 保留固定输出路径 "output/iptv.m3u"，不改用 GitHub Pages。
+9. 不把国内网络实测作为首发和日常自动更新的前置条件；未实测的项目必须如实标记。
 
-### 2.2 JSON Schema
+三、全球频道数据
 
-- [x] sources.schema.json 已建立。
-- [x] channels.schema.json 已建立。
-- [x] run_report.schema.json 已建立。
-- [x] publish_manifest.schema.json 已建立。
-- [x] candidate_manifest.schema.json 已建立。
-- [x] subscription_info.schema.json 已建立。
-- [x] 六份 Schema 的 Draft 2020-12 结构检查通过。
-- [x] 当前 Schema 正反向基础测试通过。
+用户已经提交以下文件到 "data/global_channels/"：
 
-说明：
+- "channels.json"
+- "channels.schema.json"
+- "channel_filter.json"
+- "channel_filter.schema.json"
+- "validation_summary.json"
 
-Schema 通过不代表运行时规则全部完成。
+此前核对的数据统计：
 
-来源 ID 跨数组全局唯一、频道别名冲突、跨文件 SHA 一致性等规则，仍须在对应运行时实现阶段完成。
+- 频道数量：31,805
+- 唯一 tvg_id：31,805
+- 国家和地区：231
+- CN：749
+- HK：147
+- MO：15
+- TW：154
 
-RunReport 当前只有基础 dataclass，完整字段和统计结构尚未实现。
+以上是此前检查记录，正式实施时仍须重新执行数据完整性和统计一致性验证。
 
-### 2.3 基础运行与测试
+四、唯一施工基准
 
-- [x] uv lock --check 通过。
-- [x] uv sync --locked --extra dev 通过。
-- [x] Ruff format 检查通过。
-- [x] Ruff lint 检查通过。
-- [x] pytest 测试通过。
-- [x] iptv-auto-next --mode test 运行通过。
-- [x] test 模式能够输出 JSON 运行报告。
-- [x] CI 已增加工作区完整性检查。
-- [x] 工作区完整性检查通过，未发现测试运行产生的仓库文件变更。
+以 "MASTER_PLAN.md" 1.17 为唯一母版：
 
-## 三、GitHub Actions 验收记录
+- Commit："c62b4c0e8a3c41ee2b50acdd9d00d55a2e7f3a75"
+- SHA："cae8fbf11bf90c1a125cadd3dc588518a929025d"
+- 原文件：1,778 行，42,537 字符。
 
-### 最新成功记录
+全球频道升级只能在保留 1.17 原有规则、参数、安全约束和发布机制的基础上进行必要修改。
 
-- 工作流：CI #39
-- Run ID：43387422099
-- Commit：`8d995cd5a8b4f7296e25f4c9131b4d44892460f6`
-- 结果：success
+不得使用 1.18、1.19 或此前压缩遗漏内容的 1.20 版本作为施工依据。
 
-运行记录：
+五、已经完成的仓库核对
 
-https://github.com/womomo8/IPTV-Auto-Next/actions/runs/43387422099
+此前已核对 main 分支的基础文件结构及主要文件：
 
-以下步骤全部通过：
+- 全球频道数据文件已经存在。
+- "config/channels.txt" 已存在，目前为空。
+- "config/sources.json" 仍保留旧的国内单源配置。
+- "schemas/channels.schema.json" 仍是旧版简化频道字典结构，需要与全球频道身份库方案统一。
+- "src/iptv_auto_next/main.py" 目前仅有基础 test 模式入口，尚未接入全球频道、Feed 和 Streams 流程。
+- "models.py" 仍是基础模型。
+- 当前 CI 成功仅代表基础框架检查通过，不代表全球频道系统验收完成。
+- "PROGRESS.md" 原有进度记录已经过时，需要以本记录为基础更新。
 
-1. Check out repository
-2. Set up Python
-3. Set up uv
-4. Check or bootstrap dependency lock
-5. Install locked dependencies
-6. Check formatting and lint
-7. Run unit tests
-8. Verify test-mode entry point
-9. Verify test mode leaves the repository unchanged
-10. Upload dependency lock file
+六、已经确定的实施顺序
 
-### 历史测试记录
+1. 全球频道库读取、Schema 校验、数据统计校验和频道筛选模块。
+2. 配套单元测试，包括默认国家范围、人工混合国家、精确匹配、歧义、未知频道和边界情况。
+3. Feed / Streams 数据接入及频道关联。
+4. 与 MASTER_PLAN.md 1.17 的来源处理、IPv4 安全验证和候选调度流程整合。
+5. 输出订阅文件及 Manifest。
+6. 发布保护、异常处理和 GitHub Actions 自动运行。
+7. 正向测试、反向测试、边界测试、端到端测试及干净环境复验。
 
-CI #37：
+七、当前暂停位置
 
-- Run ID：43386714124
-- 结果：success
-- pytest：30 passed
+下一项实际开发任务：
 
-https://github.com/womomo8/IPTV-Auto-Next/actions/runs/43386714124
+实现 "src/iptv_auto_next/catalog.py" 及对应测试文件，先完成全球频道库的读取、校验和两种频道筛选模式。
 
-此前出现过的 Ruff 格式检查失败，已由后续提交修正，不属于当前 main 分支的最新状态。
+目前尚未生成这些代码文件，也没有完成对应测试。
 
-## 四、第二阶段尚未完成的工作
+暂停原因：当前数据分析 / Python 执行能力暂时不可用。不能把未生成、未测试的代码当成已完成成果。
 
-### 4.1 配置和输入文件
+这只是执行工具暂时受限，不代表项目方案被推翻，也不代表需要重新开始。
 
-- [ ] 建立 config/sources.json。
-- [ ] 建立 config/channels.json。
-- [ ] 建立 config/channels.txt。
-- [ ] 建立仓库根目录 manual.txt。
-- [ ] 对实际配置文件执行 Schema 校验。
-- [ ] 核对初始频道字典的来源、字段映射和数据完整性。
+八、后续协作要求
 
-### 4.2 目录结构
+- 不要求用户重新上传已经提交的全球频道数据。
+- 不重新讨论已经确定的频道筛选方案。
+- 不擅自改变 MASTER_PLAN.md 1.17 的既有规则。
+- 不直接修改用户的 GitHub 仓库；交付完整文件，由用户上传。
+- 每批实施先给出 Commit Message。
+- 每批交付说明文件路径、测试结果、反向测试结果和未验证事项。
+- 不以基础 CI 通过代替完整系统验收。
+- 不声称没有实际执行的测试已经通过。
 
-- [x] schemas/
-- [x] src/iptv_auto_next/
-- [x] tests/unit/
-- [ ] tests/integration/
-- [ ] tests/acceptance/
-- [ ] config/
-
-说明：
-
-不得为了让目录树看起来完整而创建没有用途的空模块。
-后续目录应随实际测试和功能实现建立。
-
-正式 output 文件和 Candidate 文件属于后续阶段交付，不得提前伪造正式成品。
-
-### 4.3 基础框架
-
-- [x] 最小 RunReport dataclass。
-- [x] test 模式入口。
-- [ ] 对照 MASTER_PLAN 完成基础配置加载和校验准备。
-- [ ] 完成第二阶段目录结构和配置文件验收。
-
-## 五、实施边界
-
-1. 国内第二层和第三层没有真实证据时保持 `unverified`。
-2. 不使用收费云拨测服务。
-3. 每日定时更新为北京时间 06:17，UTC cron 为 `17 22 * * *`。
-4. 不采用线路评分系统。
-5. 不建立复杂持久化线路数据库或复杂黑名单。
-6. manual.txt 是独立人工订阅入口。
-7. 所有 Schema 使用 JSON Schema Draft 2020-12。
-8. 运行时对象使用 dataclasses。
-9. Schema 负责结构校验，跨字段和跨文件规则由运行时逻辑负责。
-10. 未实际执行的验收项目保持未完成状态。
-11. test 模式不得修改正式文件。
-12. 所有阶段严格按照 MASTER_PLAN.md 顺序推进。
-13. 不得将计划或理论可行性描述成已经实现。
-
-## 六、下一步
-
-先完成第二阶段缺失的配置文件和目录结构。
-
-初始频道字典必须依据指定数据源生成，并执行完整性、重复身份和别名冲突检查，不得使用猜测数据代替。
-
-配置文件建立后，补齐对应的单元测试和必要 Fixture 测试。
-
-完成第二阶段全部交付与验收后，才能进入第三阶段核心直播系统。
+当前进度结论：方案确定，等待开始第一批代码实现。
