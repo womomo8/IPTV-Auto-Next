@@ -1,0 +1,20 @@
+{
+  "channels": 31805,
+  "unique_tvg_ids": 31805,
+  "countries": 231,
+  "category_values": 30,
+  "country_counts": {
+    "CN": 749,
+    "HK": 147,
+    "MO": 15,
+    "TW": 154
+  },
+  "selected_country_name_conflict_keys": {
+    "CN": 29,
+    "HK": 1,
+    "MO": 0,
+    "TW": 1
+  },
+  "empty_categories": 5376,
+  "json_bytes": 5977691
+}
