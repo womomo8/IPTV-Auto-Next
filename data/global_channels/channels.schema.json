@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "IPTV Global Channel Dictionary",
+  "type": "object",
+  "properties": {
+    "channels": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "properties": {
+          "tvg_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "canonical_name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "aliases": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "uniqueItems": true
+          },
+          "country": {
+            "type": "string",
+            "pattern": "^[A-Z]{2}$"
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            },
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "tvg_id",
+          "canonical_name",
+          "aliases",
+          "country",
+          "categories"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "channels"
+  ],
+  "additionalProperties": false
+}
