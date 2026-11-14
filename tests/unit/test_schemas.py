@@ -7,16 +7,19 @@ import pytest
 from jsonschema import Draft202012Validator, FormatChecker
 
 ROOT = Path(__file__).resolve().parents[2]
-SCHEMA_DIR = ROOT / "schemas"
-
-SCHEMA_NAMES = [
-    "sources.schema.json",
-    "channels.schema.json",
-    "run_report.schema.json",
-    "publish_manifest.schema.json",
-    "candidate_manifest.schema.json",
-    "subscription_info.schema.json",
-]
+SCHEMA_PATHS = {
+    "sources.schema.json": ROOT / "schemas" / "sources.schema.json",
+    "run_report.schema.json": ROOT / "schemas" / "run_report.schema.json",
+    "publish_manifest.schema.json": ROOT / "schemas" / "publish_manifest.schema.json",
+    "candidate_manifest.schema.json": ROOT / "schemas" / "candidate_manifest.schema.json",
+    "subscription_info.schema.json": ROOT / "schemas" / "subscription_info.schema.json",
+    "global_channels.schema.json": (
+        ROOT / "data" / "global_channels" / "channels.schema.json"
+    ),
+    "channel_filter.schema.json": (
+        ROOT / "data" / "global_channels" / "channel_filter.schema.json"
+    ),
+}
 
 FORMAT_CHECKER = FormatChecker()
 SHA256 = "a" * 64
@@ -24,8 +27,7 @@ COMMIT_SHA = "b" * 40
 
 
 def load_schema(name: str) -> dict:
-    path = SCHEMA_DIR / name
-    return json.loads(path.read_text(encoding="utf-8"))
+    return json.loads(SCHEMA_PATHS[name].read_text(encoding="utf-8"))
 
 
 def make_validator(name: str) -> Draft202012Validator:
@@ -33,6 +35,16 @@ def make_validator(name: str) -> Draft202012Validator:
         load_schema(name),
         format_checker=FORMAT_CHECKER,
     )
+
+
+def valid_global_channel() -> dict:
+    return {
+        "tvg_id": "CCTV5.cn",
+        "canonical_name": "CCTV-5",
+        "aliases": ["CCTV5", "中央五套"],
+        "country": "CN",
+        "categories": ["sports"],
+    }
 
 
 def valid_subscription_info() -> dict:
@@ -135,7 +147,7 @@ def valid_publish_manifest() -> dict:
     }
 
 
-@pytest.mark.parametrize("schema_name", SCHEMA_NAMES)
+@pytest.mark.parametrize("schema_name", list(SCHEMA_PATHS))
 def test_schema_is_valid_draft_2020_12(schema_name: str) -> None:
     Draft202012Validator.check_schema(load_schema(schema_name))
 
@@ -224,39 +236,74 @@ def test_sources_schema_rejects_url_userinfo() -> None:
     )
 
 
-def test_channels_schema_accepts_valid_channel() -> None:
-    validator = make_validator("channels.schema.json")
+def test_global_channels_schema_accepts_valid_channel() -> None:
+    validator = make_validator("global_channels.schema.json")
 
-    validator.validate(
-        {
-            "channels": [
-                {
-                    "tvg_id": "CCTV5.cn",
-                    "canonical_name": "CCTV-5",
-                    "aliases": ["CCTV5", "中央五套"],
-                }
-            ]
-        }
-    )
+    validator.validate({"channels": [valid_global_channel()]})
 
 
-def test_channels_schema_rejects_empty_channels() -> None:
-    validator = make_validator("channels.schema.json")
+def test_global_channels_schema_rejects_empty_channels() -> None:
+    validator = make_validator("global_channels.schema.json")
 
     assert not validator.is_valid({"channels": []})
 
 
-def test_channels_schema_rejects_missing_aliases() -> None:
-    validator = make_validator("channels.schema.json")
+def test_global_channels_schema_rejects_missing_aliases() -> None:
+    validator = make_validator("global_channels.schema.json")
+    channel = valid_global_channel()
+    del channel["aliases"]
+
+    assert not validator.is_valid({"channels": [channel]})
+
+
+def test_global_channels_schema_rejects_duplicate_aliases() -> None:
+    validator = make_validator("global_channels.schema.json")
+    channel = valid_global_channel()
+    channel["aliases"] = ["CCTV5", "CCTV5"]
+
+    assert not validator.is_valid({"channels": [channel]})
+
+
+def test_channel_filter_schema_accepts_specific_countries() -> None:
+    validator = make_validator("channel_filter.schema.json")
+
+    validator.validate(
+        {
+            "countries": ["CN", "HK", "MO", "TW"],
+            "categories": ["sports", "news"],
+        }
+    )
+
+
+def test_channel_filter_schema_accepts_all_countries() -> None:
+    validator = make_validator("channel_filter.schema.json")
+
+    validator.validate(
+        {
+            "countries": ["*"],
+            "categories": [],
+        }
+    )
+
+
+def test_channel_filter_schema_rejects_wildcard_with_other_countries() -> None:
+    validator = make_validator("channel_filter.schema.json")
 
     assert not validator.is_valid(
         {
-            "channels": [
-                {
-                    "tvg_id": "CCTV5.cn",
-                    "canonical_name": "CCTV-5",
-                }
-            ]
+            "countries": ["*", "CN"],
+            "categories": [],
+        }
+    )
+
+
+def test_channel_filter_schema_rejects_invalid_country_code() -> None:
+    validator = make_validator("channel_filter.schema.json")
+
+    assert not validator.is_valid(
+        {
+            "countries": ["China"],
+            "categories": [],
         }
     )
 
