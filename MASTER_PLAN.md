@@ -1303,8 +1303,8 @@ Schema 更新、实际校验结果和文件状态必须记录到 "PROGRESS.md"�
 
 正式 URL：
 
-- "https://raw.githubusercontent.com/<owner>/<repo>/main/output/iptv.m3u"
-- "https://raw.githubusercontent.com/<owner>/<repo>/main/output/iptv.txt"
+- "https://raw.githubusercontent.com/womomo8/IPTV-Auto-Next/main/output/iptv.m3u"
+- "https://raw.githubusercontent.com/womomo8/IPTV-Auto-Next/main/output/iptv.txt"
 
 GitHub Pages 不作为正式发布渠道。
 
@@ -1455,6 +1455,8 @@ candidate-publish 必须：
 - "config/"
 - "data/"
 - "schemas/"
+- "tests/"
+- "pyproject.toml"
 - ".github/"
 - "manual.txt"
 - ".python-version"
