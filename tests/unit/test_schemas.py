@@ -1,12 +1,20 @@
+
 from __future__ import annotations
 
 import json
+import unicodedata
 from pathlib import Path
 
 import pytest
 from jsonschema import Draft202012Validator, FormatChecker
 
 ROOT = Path(__file__).resolve().parents[2]
+
+CHANNELS_PATH = ROOT / "data" / "global_channels" / "channels.json"
+FILTER_PATH = ROOT / "data" / "global_channels" / "channel_filter.json"
+SOURCES_PATH = ROOT / "config" / "sources.json"
+SUMMARY_PATH = ROOT / "data" / "global_channels" / "validation_summary.json"
+
 SCHEMA_PATHS = {
     "sources.schema.json": ROOT / "schemas" / "sources.schema.json",
     "run_report.schema.json": ROOT / "schemas" / "run_report.schema.json",
@@ -24,10 +32,15 @@ SCHEMA_PATHS = {
 FORMAT_CHECKER = FormatChecker()
 SHA256 = "a" * 64
 COMMIT_SHA = "b" * 40
+SELECTED_COUNTRIES = ("CN", "HK", "MO", "TW")
+
+
+def load_json(path: Path) -> dict:
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def load_schema(name: str) -> dict:
-    return json.loads(SCHEMA_PATHS[name].read_text(encoding="utf-8"))
+    return load_json(SCHEMA_PATHS[name])
 
 
 def make_validator(name: str) -> Draft202012Validator:
@@ -35,6 +48,34 @@ def make_validator(name: str) -> Draft202012Validator:
         load_schema(name),
         format_checker=FORMAT_CHECKER,
     )
+
+
+def normalize_name(value: str) -> str:
+    return unicodedata.normalize("NFKC", value).strip().lower()
+
+
+def selected_country_conflicts(channels: list[dict]) -> dict[str, int]:
+    result = {}
+
+    for country in SELECTED_COUNTRIES:
+        name_to_ids: dict[str, set[str]] = {}
+
+        for channel in channels:
+            if channel["country"] != country:
+                continue
+
+            names = [channel["canonical_name"], *channel["aliases"]]
+
+            for name in names:
+                key = normalize_name(name)
+                if key:
+                    name_to_ids.setdefault(key, set()).add(channel["tvg_id"])
+
+        result[country] = sum(
+            1 for channel_ids in name_to_ids.values() if len(channel_ids) > 1
+        )
+
+    return result
 
 
 def valid_global_channel() -> dict:
@@ -150,6 +191,84 @@ def valid_publish_manifest() -> dict:
 @pytest.mark.parametrize("schema_name", list(SCHEMA_PATHS))
 def test_schema_is_valid_draft_2020_12(schema_name: str) -> None:
     Draft202012Validator.check_schema(load_schema(schema_name))
+
+
+def test_global_channel_data_matches_schema() -> None:
+    data = load_json(CHANNELS_PATH)
+    make_validator("global_channels.schema.json").validate(data)
+
+
+def test_global_channel_ids_are_nonempty_and_globally_unique() -> None:
+    data = load_json(CHANNELS_PATH)
+    channels = data["channels"]
+    ids = [channel["tvg_id"] for channel in channels]
+
+    assert all(isinstance(channel_id, str) and channel_id.strip() for channel_id in ids)
+    assert len(ids) == len(set(ids))
+
+
+def test_global_channel_names_contain_no_forbidden_characters() -> None:
+    channels = load_json(CHANNELS_PATH)["channels"]
+
+    for channel in channels:
+        names = [channel["canonical_name"], *channel["aliases"]]
+
+        for name in names:
+            assert '"' not in name
+            assert "\r" not in name
+            assert "\n" not in name
+
+
+def test_channel_filter_config_matches_schema() -> None:
+    make_validator("channel_filter.schema.json").validate(load_json(FILTER_PATH))
+
+
+def test_sources_config_matches_schema() -> None:
+    make_validator("sources.schema.json").validate(load_json(SOURCES_PATH))
+
+
+def test_source_ids_are_globally_unique() -> None:
+    sources = load_json(SOURCES_PATH)
+    source_ids = [
+        source["id"]
+        for group in ("manual_single", "carriers", "discovery")
+        for source in sources[group]
+    ]
+
+    assert len(source_ids) == len(set(source_ids))
+
+
+def test_validation_summary_matches_actual_global_channel_data() -> None:
+    channels = load_json(CHANNELS_PATH)["channels"]
+    summary = load_json(SUMMARY_PATH)
+
+    ids = {channel["tvg_id"] for channel in channels}
+    countries = {channel["country"] for channel in channels}
+    categories = {
+        category
+        for channel in channels
+        for category in channel["categories"]
+    }
+
+    country_counts = {
+        country: sum(1 for channel in channels if channel["country"] == country)
+        for country in SELECTED_COUNTRIES
+    }
+
+    empty_categories = sum(
+        1 for channel in channels if not channel["categories"]
+    )
+
+    assert summary["channels"] == len(channels)
+    assert summary["unique_tvg_ids"] == len(ids)
+    assert summary["countries"] == len(countries)
+    assert summary["category_values"] == len(categories)
+    assert summary["country_counts"] == country_counts
+    assert summary["empty_categories"] == empty_categories
+    assert summary["json_bytes"] == CHANNELS_PATH.stat().st_size
+    assert summary["selected_country_name_conflict_keys"] == (
+        selected_country_conflicts(channels)
+    )
 
 
 def test_sources_schema_accepts_empty_arrays() -> None:
