@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "IPTV Channel Filter Configuration",
+  "type": "object",
+  "properties": {
+    "countries": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^(?:\\*|[A-Z]{2})$"
+      }
+    },
+    "categories": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9][a-z0-9_-]*$"
+      }
+    }
+  },
+  "required": [
+    "countries",
+    "categories"
+  ],
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "countries": {
+            "contains": {
+              "const": "*"
+            }
+          }
+        },
+        "required": [
+          "countries"
+        ]
+      },
+      "then": {
+        "properties": {
+          "countries": {
+            "minItems": 1,
+            "maxItems": 1
+          }
+        }
+      }
+    }
+  ]
+}
