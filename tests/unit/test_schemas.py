@@ -13,9 +13,7 @@ SCHEMA_PATHS = {
     "publish_manifest.schema.json": ROOT / "schemas" / "publish_manifest.schema.json",
     "candidate_manifest.schema.json": ROOT / "schemas" / "candidate_manifest.schema.json",
     "subscription_info.schema.json": ROOT / "schemas" / "subscription_info.schema.json",
-    "global_channels.schema.json": (
-        ROOT / "data" / "global_channels" / "channels.schema.json"
-    ),
+    "global_channels.schema.json": (ROOT / "data" / "global_channels" / "channels.schema.json"),
     "channel_filter.schema.json": (
         ROOT / "data" / "global_channels" / "channel_filter.schema.json"
     ),
