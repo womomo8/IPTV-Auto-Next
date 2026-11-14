@@ -1,340 +1,236 @@
-# IPTV-Auto-Next PROGRESS.md
-
-更新性质：实际进度与证据记录\
-对应总规范：`MASTER_PLAN.md`
-1.17-G3（当前仓库版本；待按已核验事实修正冲突规则）\
-仓库：`womomo8/IPTV-Auto-Next`\
-分支：`main`
+IPTV-Auto-Next 项目进度
 
-> 本文件只记录实际状态、核验依据、测试结果和下一步工作，不替代
-> `MASTER_PLAN.md`
-> 定义技术规则。未实际完成的事项明确标记为"未完成"或"unverified"。
+对应总施工依据："MASTER_PLAN.md"
 
-------------------------------------------------------------------------
+当前规范版本："1.17-G3"
 
-## 1. 项目目标与当前边界
+仓库："womomo8/IPTV-Auto-Next"
 
-项目目标：自动收集公开或授权 IPTV 来源，使用全球频道库识别频道身份，根据
-`config/channels.txt` 选择频道，筛选可通过程序技术探测的 IPv4
-直播线路，持续生成并安全发布 M3U/TXT 订阅。
+分支："main"
 
-已确认的频道选择行为：
+本次核对基准提交："71a0ff1cb2a834e1966935c6cc7955e371940d1c"
 
--   `config/channels.txt`
-    有有效内容：只选择用户列出的频道；允许跨国家和地区混合选择。
--   文件为空或全为注释：默认使用 CN、HK、MO、TW 范围。
--   全球频道库只定义频道身份，不代表该频道存在可播放线路。
--   `tvg-id` 存在时必须按 ID 精确匹配；空 ID
-    或不匹配均拒绝，不回退名称匹配。只有完全没有 `tvg-id`
-    属性时才允许精确名称匹配。
--   `tvg-id` 可能包含 `ChannelID@FeedID`，解析时必须拆分频道 ID 和 Feed
-    ID。
--   名称冲突不等于 `tvg_id` 重复。精确 ID
-    可以区分同名频道；用户仅输入名称且匹配多个频道时必须报歧义。
-
-验证边界：
+«本文件只记录实际状态、核验依据、测试结果和下一步工作，不替代 "MASTER_PLAN.md" 定义技术规则。计划、草稿和未经执行的测试不得记为已完成。»
 
-1.  Runner 内部程序技术探测。
-2.  中国大陆网络下载正式订阅文件。
-3.  中国大陆网络请求媒体地址及必要 HLS 分片。
-4.  实际设备和播放器播放反馈。
+1. 项目目标与验证边界
 
-目前只有第一层存在部分 CI
-基础验证。第二、第三层没有真实国内网络证据，必须保持
-`unverified`；第四层属于外部设备反馈。不得把 Runner
-内部检查描述为国内可播放。
+项目目标：自动收集公开或授权的 IPTV 来源，使用全球频道库识别频道身份，根据 "config/channels.txt" 选择频道，筛选符合项目技术要求的 IPv4 直播线路，持续生成并安全发布 M3U/TXT 订阅。
 
-------------------------------------------------------------------------
+验证分为不同层次：
 
-## 2. 仓库当前状态
+1. GitHub Runner 内部的程序技术探测。
+2. 中国大陆网络下载正式订阅文件。
+3. 中国大陆网络请求媒体地址及必要的 HLS 分片。
+4. 实际设备和播放器播放反馈。
 
-最近一次核对的仓库：`womomo8/IPTV-Auto-Next`，`main` 分支。
+Runner 内部检查不能证明中国大陆网络可达或设备能够播放。没有真实国内网络证据时，第二、第三层必须保持 "unverified"；这不阻断正常开发。
 
-最近一次核对的 main 提交： `0457070716db49bc8728959356034088a7cca176`
+2. 仓库核对基准
 
-### 2.1 规范和进度文件
+- 仓库："womomo8/IPTV-Auto-Next"
+- 分支："main"
+- 核对基准提交："71a0ff1cb2a834e1966935c6cc7955e371940d1c"
 
--   `MASTER_PLAN.md` 已存在，仓库 Blob
-    SHA：`427d23ee8dafb46ce23052440ee4314dcf4cd445`。
--   文件版本标记：`1.17-G3 完整恢复修订版`。
--   文件长度约 44,766 字符，约 2,270 行。
--   `PROGRESS.md` 已存在，旧文件 Blob
-    SHA：`3bb284fb48c16faec22f6ea98c68bb5999fa6a9e`。
--   `README.md` 已存在，但正式订阅 URL 仍含 `<owner>/<repo>`
-    占位符，定时更新/发布说明也需要与实际实现状态对齐。
+本次核对记录来自该基准下的仓库文件及既有检查结果。历史上游数据核验结果单独标记，不冒充本次重新下载核验。
 
-以上 SHA 是本次读取时的文件版本标识，不代表本文件已提交到仓库。
+3. 核心文档
 
-### 2.2 目录和代码
+- "MASTER_PLAN.md"：唯一总施工依据。
+- "PROGRESS.md"：实际进度、测试证据和遗留问题。
+- "README.md"：项目简介和使用说明。
 
-当前 `src/iptv_auto_next/` 已确认存在：
+"README.md" 曾被旧版进度内容覆盖，需用本次提供的 README 完整替换内容恢复项目介绍。
 
--   `main.py`
--   `models.py`
--   `__init__.py`
-
-以下核心业务模块尚未实现：
-
--   `catalog.py`
--   `source.py`
--   `network.py`
--   `parser.py`
--   `validator.py`
--   `channel.py`
--   `selector.py`
--   `playlist.py`
--   `publisher.py`
--   `reporter.py`
+4. 基础环境与 CI
 
-因此，当前仓库还不是完整的自动采集、验证和发布系统。
+已确认存在的基础文件：
 
-### 2.3 配置和 Schema 遗留
+- ".python-version"
+- "pyproject.toml"
+- "uv.lock"
+- ".github/workflows/ci.yml"
 
--   `config/sources.json`
-    当前只有中国（CN）公开发现源：`https://iptv-org.github.io/iptv/countries/cn.m3u`。
--   HK、MO、TW 对应来源尚未补齐。
--   旧的 `schemas/channels.schema.json`
-    仍存在；按总规范，它应废弃并删除。
--   `tests/unit/test_schemas.py` 当前仍以旧 Schema
-    目录为测试入口；需要调整为验证 `data/global_channels/`
-    中的全球频道库 Schema。
--   全球频道库的两个 Schema 尚未完整纳入当前测试入口。
--   当前没有正式订阅成品，也没有完整的正式发布工作流。
-
-------------------------------------------------------------------------
-
-## 3. 全球频道库核验结果
-
-用户已将以下五个文件提交到仓库，无需再次上传：
+最新已核对的 CI 记录：
 
-1.  `data/global_channels/channels.json`
-2.  `data/global_channels/channels.schema.json`
-3.  `data/global_channels/channel_filter.json`
-4.  `data/global_channels/channel_filter.schema.json`
-5.  `data/global_channels/validation_summary.json`
+- Run："43569927246"
+- 地址：https://github.com/womomo8/IPTV-Auto-Next/actions/runs/43569927246
+- 事件："push"
+- 结果："success"
 
-### 3.1 本地数据统计
+该工作流包含 Python 环境设置、uv 锁定依赖检查与安装、Ruff 格式检查、Ruff 代码检查、pytest、"iptv-auto-next --mode test"，以及检查测试是否意外修改仓库文件。
 
-已核验的 `channels.json`：
+该次 CI 成功只证明当时基础框架检查通过，不代表完整 IPTV 业务功能通过验收。
 
-  项目                         结果
-  --------------- -----------------
-  频道记录                   31,805
-  唯一 `tvg_id`              31,805
-  国家/地区                     231
-  CN                            749
-  HK                            147
-  MO                             15
-  TW                            154
-  类别种类                       30
-  空类别记录                  5,376
-  文件大小          5,977,691 bytes
+5. 全球频道库
 
-频道记录数与唯一 `tvg_id` 数相同，未发现重复频道 ID。
+仓库内全球频道库验证摘要记录：
 
-### 3.2 上游频道身份对齐
+- 频道记录：31,805 条。
+- 唯一 "tvg_id"：31,805 个。
+- 国家和地区：231 个。
+- CN：749 条。
+- HK：147 条。
+- MO：15 条。
+- TW：154 条。
+- 类别种类：30。
+- 空类别记录：5,376 条。
+- "channels.json"：5,977,691 bytes。
 
-对照上游 `iptv-org/database`：
+已确认的全球频道库文件：
 
--   上游仓库：`iptv-org/database`
--   核验 Commit：`53b0fa6605dac7c65a0fa151fef4877b10e82151`
--   对照文件：`data/channels.csv`
+1. "data/global_channels/channels.json"
+2. "data/global_channels/channels.schema.json"
+3. "data/global_channels/channel_filter.json"
+4. "data/global_channels/channel_filter.schema.json"
+5. "data/global_channels/validation_summary.json"
 
-核验结论：
+以上统计来自仓库内的验证摘要，不等于本次重新遍历并重新验证完整频道数据。
 
--   本地 31,805 条频道记录的 ID、名称、国家字段与该上游版本逐条对齐。
--   一条别名和一条类别记录存在重复项，本地数据已去重。
--   本地频道主体高度确认来自该上游数据库版本。
--   五个文件的准确 ZIP
-    来源未恢复，因此不能声称五个文件全部是上游原样文件；Schema、筛选配置和摘要属于项目整理加工内容。
+5.1 频道身份规则
 
-### 3.3 名称冲突：必须修正总规范中的旧假设
+"MASTER_PLAN.md" 已明确以下规则：
 
-全库规范化名称/别名冲突键约 1,717 个。默认 CN/HK/MO/TW 合并范围内共有 33
-个冲突键，按国家对象统计：
+- "tvg_id" 必须非空且全局唯一。
+- 不同频道的名称或别名允许冲突；名称冲突不代表频道 ID 重复或频道库损坏。
+- 用户按名称选择时若匹配多个频道，必须明确报告歧义。
+- 精确 "tvg_id" 可以区分同名频道。
+- "频道ID@FeedID" 必须拆分，FeedID 不得作为频道 ID。
+- 不允许模糊匹配、拼音猜测或自动推断频道身份。
+- "selected_country_name_conflict_keys" 是诊断统计，允许非零，不是启动阻断条件。
 
--   CN：29
--   HK：1
--   MO：0
--   TW：1
+5.2 上游历史核验记录
 
-关键事实：
+以下为既有历史核验记录，并非本次重新下载上游数据复核：
 
--   `validation_summary.json` 的 `selected_country_name_conflict_keys`
-    是按国家统计的对象，不是一个必须为 0 的单一数值。
--   当前全球库存在跨频道同名/别名冲突，不等于 `tvg_id`
-    重复或频道身份数据损坏。
--   不能要求默认范围名称冲突数为
-    0，也不能把非零名称冲突一律当作全局致命错误。
--   正确处理方式：频道身份以唯一 `tvg_id` 为主；用户按 ID
-    选择时可以区分同名频道；仅按名称选择且匹配多个频道时报告歧义；来源条目带有
-    `tvg-id` 时严格按 ID 匹配。
--   `MASTER_PLAN.md` 第 5.3、5.4 节中把任何名称冲突或
-    `selected_country_name_conflict_keys`
-    非零视为全局致命错误的条款，与实际数据不符，必须修订。
--   `selected_country_name_conflict_keys`
-    应作为诊断统计保留，按国家记录对象；不能要求该对象为 0。
+频道数据库：
 
-这是规范修正，不是删除 `tvg_id` 唯一性检查。重复或空 `tvg_id`
-仍然是致命错误。
+- 上游仓库："iptv-org/database"
+- 锁定 Commit："53b0fa6605dac7c65a0fa151fef4877b10e82151"
+- 历史记录显示本地频道 ID、名称和国家字段与该锁定版本对齐。
 
-------------------------------------------------------------------------
+Feed：
 
-## 4. 上游 Feed / Streams 结构核验
+- 历史记录文件："data/feeds.csv"
+- 历史记录：45,462 条，覆盖 31,805 个频道 ID。
 
-### 4.1 Feed 数据
+Streams：
 
--   上游仓库：`iptv-org/database`
--   Commit：`53b0fa6605dac7c65a0fa151fef4877b10e82151`
--   文件：`data/feeds.csv`
--   记录数：45,462
--   涉及频道：31,805
--   所有 Feed 频道 ID 均能对应本地全球频道库。
--   未发现重复的 channel + feed 组合。
+- 上游仓库："iptv-org/iptv"
+- 锁定 Commit："f1191d1b8d8d5e76314cfd5690ceec904d26e1a9"
+- 历史检查文件："streams/cn.m3u"、"streams/hk.m3u"、"streams/mo.m3u"、"streams/tw.m3u"
+- 历史记录总条目：610 条。
+- 非空 "tvg-id"：346 条。
+- 空 "tvg-id"：264 条。
 
-### 4.2 Streams 数据
+这些记录只涉及历史数据结构和身份关联核验，不代表媒体线路在线、可播放或中国大陆网络可达。
 
--   上游仓库：`iptv-org/iptv`
--   Commit：`f1191d1b8d8d5e76314cfd5690ceec904d26e1a9`
--   检查文件：`streams/cn.m3u`、`streams/hk.m3u`、`streams/mo.m3u`、`streams/tw.m3u`
--   四地区合计：610 条。
--   非空 `tvg-id`：346 条。
--   空 `tvg-id`：264 条。
--   346 条非空 ID 均能对应本地频道 ID 和 Feed ID。
--   264 条空 ID 必须拒绝，不允许通过名称猜测补齐。
+6. 当前代码与业务功能
 
-### 4.3 证据边界
+此前仓库检查确认，"src/iptv_auto_next/" 仅包含基础入口和数据模型文件：
 
-以上完成的是上游数据结构、频道 ID、Feed ID 关联核验，不是 610
-条媒体线路逐条发起网络请求，也不是线路播放验证。
+- "__init__.py"
+- "main.py"
+- "models.py"
 
-不能据此声称：
+尚未确认实现完整的以下业务能力：
 
--   610 条线路均在线；
--   346 条线路均可播放；
--   中国大陆网络可访问这些媒体；
--   用户设备能够正常播放。
+- 全球频道库读取与校验。
+- 来源采集与解析。
+- IPv4 网络安全访问。
+- TS/HLS 媒体验证。
+- 频道身份匹配与线路筛选。
+- M3U/TXT 订阅生成。
+- Candidate 与正式发布保护。
+- 完整运行报告生成。
 
-国内第二层和第三层仍为 `unverified`。
+因此，当前不能把项目描述为已经具备完整自动采集、验证和发布能力。
 
-------------------------------------------------------------------------
+7. Schema 状态与遗留工作
 
-## 5. CI 与已完成测试
+规范要求使用 JSON Schema Draft 2020-12，并分别管理全球频道库 Schema 与运行配置 Schema。
 
-已检查 GitHub Actions 运行记录：
+全球频道库 Schema：
 
--   Run：`https://github.com/womomo8/IPTV-Auto-Next/actions/runs/43562058305`
--   Job ID：`132347702770`
+- "data/global_channels/channels.schema.json"
+- "data/global_channels/channel_filter.schema.json"
 
-该次运行实际通过的内容：
+其他项目 Schema：
 
--   GitHub-hosted Runner 使用 Python 3.14.10。
--   `uv.lock` 依赖安装成功。
--   Ruff 检查通过。
--   当时仓库已有的单元测试通过。
--   `--mode test` 执行通过。
--   测试后仓库未被修改。
+- "schemas/sources.schema.json"
+- "schemas/run_report.schema.json"
+- "schemas/publish_manifest.schema.json"
+- "schemas/candidate_manifest.schema.json"
+- "schemas/subscription_info.schema.json"
 
-该结果只证明当时已有基础框架和测试通过，不代表下列工作已经完成：
+此前检查发现的遗留事项：
 
--   全球频道库业务模块实现；
--   来源采集和解析；
--   IPv4/DNS Rebinding 安全网络层；
--   TS/HLS 完整媒体验证；
--   1000 候选压力测试；
--   Candidate 精确提交校验；
--   正式四文件发布；
--   双重持久化发布阻断；
--   国内真实订阅分发或媒体可达性验证。
+- "schemas/channels.schema.json" 仍需按总规范清理。
+- "tests/unit/test_schemas.py" 仍有旧路径引用，需要迁移测试入口。
+- 全球频道库的两个 Schema 需要纳入测试。
+- 不得只删除旧 Schema 而不迁移相应测试。
 
-不得把基础 CI 通过扩大解释为完整系统验收通过。
+8. 输出与发布状态
 
-------------------------------------------------------------------------
+正式输出路径规划为：
 
-## 6. 当前实施阶段判断
+- "output/iptv.m3u"
+- "output/iptv.txt"
+- "output/subscription_info.json"
+- "output/publish_manifest.json"
 
-当前仍处于第二阶段"仓库与基础框架"的前置核验和接口冻结工作中。
+此前检查未确认这些正式输出文件已经生成，也未确认正式订阅生成和发布工作流已经完成。
 
-  ------------------------------------------------------------------------------------
-  工作项                  当前状态                说明
-  ----------------------- ----------------------- ------------------------------------
-  全球频道库文件入库      已完成                  五个文件已在仓库
+预定订阅地址：
 
-  频道数量及唯一 ID 统计  已核验                  31,805 条，ID 唯一
+- M3U：https://raw.githubusercontent.com/womomo8/IPTV-Auto-Next/main/output/iptv.m3u
+- TXT：https://raw.githubusercontent.com/womomo8/IPTV-Auto-Next/main/output/iptv.txt
 
-  上游频道 ID 对齐        已核验                  对齐 database 固定 Commit
+在对应文件实际生成并发布前，以上地址不能视为可用订阅。
 
-  名称冲突规则修正        待规范文件更新          原规范把名称冲突错误地设为致命错误
+9. 当前实施状态
 
-  Feed 结构核验           已核验                  45,462 条 Feed
+工作项| 状态
+项目总规范| 已有 "MASTER_PLAN.md"
+全球频道库文件入库| 已完成
+全球频道库统计摘要| 仓库内已有记录
+上游频道 ID 对齐| 有历史核验记录
+Feed/Streams 结构核验| 有历史核验记录
+频道身份规则| 已在 "MASTER_PLAN.md" 明确
+Schema 完整校验| 待完成
+旧频道 Schema 清理| 待完成
+Schema 测试迁移| 待完成
+第二阶段整体验收| 未完成
+全球频道库读取模块| 未实施
+来源采集与解析| 未实施
+IPv4 网络安全层| 未实施
+TS/HLS 媒体验证| 未实施
+线路筛选| 未实施
+M3U/TXT 生成| 未实施
+Candidate 与正式发布| 未实施
+自动更新工作流| 未完成
+国内网络订阅及媒体可达性| "unverified"
 
-  CN/HK/MO/TW Streams     已核验                  610 条结构检查；264 条空 ID 拒绝
-  身份关联                                        
+10. 下一步施工顺序
 
-  媒体线路实际联网验证    未完成                  不属于上述结构核验
+严格按照 "MASTER_PLAN.md" 的阶段顺序执行：
 
-  模块接口契约冻结        待完成                  必须以已核验数据结构为依据
+1. 完成全球频道库及项目其他 Schema 的 Draft 2020-12 校验。
+2. 将全球频道库 Schema 纳入测试入口。
+3. 迁移旧频道 Schema 测试路径。
+4. 删除废弃的 "schemas/channels.schema.json"。
+5. 执行完整基础测试并记录实际结果。
+6. 第二阶段验收通过后，再开始全球频道库读取模块及后续业务代码。
 
-  全球库及其他 Schema     待完成                  当前测试入口仍有旧 Schema 遗留
-  测试                                            
+不得提前标记未完成的业务功能。
 
-  `catalog.py` 等业务代码 未开始                  不得越过前置接口和 Schema 验收
+11. 进度记录规则
 
-  完整自动采集与验证      未完成                  核心模块尚未实现
+每批实际施工完成后记录：
 
-  正式订阅发布            未完成                  无正式成品及完整发布工作流
+- 日期及完成事项。
+- 涉及文件。
+- 实际测试结果。
+- GitHub Commit。
+- 未解决问题。
 
-  国内第二层/第三层       `unverified`            没有真实国内网络证据
-  ------------------------------------------------------------------------------------
-
-------------------------------------------------------------------------
-
-## 7. 必须先处理的规范一致性问题
-
-在继续写业务代码之前，必须完成以下文件级工作：
-
-1.  修订 `MASTER_PLAN.md` 第 5.3、5.4 节：保留 `tvg_id`
-    全局唯一性和字段完整性检查；取消"任何名称冲突均致命"的错误要求。
-2.  明确 `selected_country_name_conflict_keys`
-    是按国家统计的对象，允许非零并作为诊断信息；用户按名称选择发生歧义时才拒绝该次名称选择。
-3.  明确 `tvg-id` 可能为 `ChannelID@FeedID`，解析时拆分两个标识；空
-    `tvg-id` 直接拒绝。
-4.  修订 `PROGRESS.md` 与总规范中全球库核验的完成状态，保留上游 Commit
-    SHA 和数据统计。
-5.  更新 `README.md`：移除 `<owner>/<repo>` 占位
-    URL；没有实际工作流证据前，不得宣称每日自动发布已经投入运行。
-6.  删除废弃的
-    `schemas/channels.schema.json`，并同步调整仍依赖旧路径的测试入口；此项应按总规范执行，不能只删文件而不修测试。
-7.  确认两个全球频道库 Schema 纳入测试。
-8.  完成 6.3 模块接口契约和 6.4 Schema
-    更新/验证，并将实际结果记录后，才开始 `catalog.py`
-    及依赖全球库结构的业务代码。
-
-------------------------------------------------------------------------
-
-## 8. 下一步施工顺序
-
-严格按以下顺序推进，不跳步：
-
-1.  完成 `MASTER_PLAN.md`、`PROGRESS.md`、`README.md` 三文件一致性修订。
-2.  核对五个全球频道库文件当前仓库版本和 Schema
-    实际结构；不要求用户重新上传。
-3.  冻结频道库读取、选择、身份匹配接口。
-4.  修订并执行全球频道库及项目其他 Schema 测试。
-5.  删除旧频道 Schema 并迁移对应测试入口。
-6.  完成第二阶段基础框架验收。
-7.  验收通过后再开始 `catalog.py` 和后续核心业务模块。
-
-每一批代码变更前先给出 Commit
-Message；向用户交付完整文件，不要求用户在手机上逐段编辑。用户自行上传
-GitHub；助手不得声称已替用户提交。
-
-------------------------------------------------------------------------
-
-## 9. 当前可用 Commit Message
-
-文档三文件统一修订建议使用：
-
-`docs: align master plan and progress with verified catalog findings`
-
-本条仅为建议的提交说明，不代表相关文件已经提交。
+不得把计划、草稿或未经执行的测试记为已完成。
